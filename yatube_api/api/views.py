@@ -6,6 +6,7 @@ from .serializers import CommentSerializer, FollowSerializer
 from .permissions import OwnerOrReadOnly, OwnerOnly
 from django.contrib.auth import get_user_model
 from .pagination import PostsPagination
+from rest_framework import mixins
 
 User = get_user_model()
 
@@ -32,19 +33,23 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         # Получаем id post из эндпоинта
-        post_id = self.kwargs.get("post_id")
-        post = get_object_or_404(Post, id=post_id)
-        # И отбираем только нужные комментарии
-        new_queryset = Comment.objects.filter(post=post)
+        post_id = self.kwargs.get('post_id')
+        new_queryset = Comment.objects.filter(post__pk=post_id)
         return new_queryset
 
     def perform_create(self, serializer):
-        post_id = self.kwargs.get("post_id")
+        post_id = self.kwargs.get('post_id')
         post = get_object_or_404(Post, id=post_id)
         serializer.save(author=self.request.user, post=post)
 
 
-class FollowViewSet(viewsets.ModelViewSet):
+class CreateListViewSet(mixins.CreateModelMixin,
+                        mixins.ListModelMixin,
+                        viewsets.GenericViewSet):
+    pass
+
+
+class FollowViewSet(CreateListViewSet):
     serializer_class = FollowSerializer
     permission_classes = [OwnerOnly]
     filter_backends = (filters.SearchFilter,)

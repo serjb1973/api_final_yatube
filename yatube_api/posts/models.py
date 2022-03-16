@@ -21,8 +21,8 @@ class Post(models.Model):
     image = models.ImageField(
         upload_to='posts/', null=True, blank=True)
     group = models.ForeignKey(
-        Group, on_delete=models.CASCADE,
-        related_name="posts", blank=True, null=True
+        Group, on_delete=models.SET_NULL,
+        related_name='posts', blank=True, null=True
     )
 
     def __str__(self):
@@ -50,3 +50,13 @@ class Follow(models.Model):
         on_delete=models.CASCADE,
         related_name='following',
         verbose_name='Автор')
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'following'],
+                name='unique_follow'),
+            models.CheckConstraint(
+                check=~models.Q(user=models.F('following')),
+                name='user_not_follow_to_themselves'
+            )]
